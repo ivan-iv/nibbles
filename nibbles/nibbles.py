@@ -57,24 +57,47 @@ class WorldMap():
         return result
 
 
-def render(coords, color, cell_size):
-    all_points = []
-    all_colors = []
+class Canvas():
+    bg_color = 255, 155, 35
 
-    for x, y in coords:
-        # x1,y1  x2,y2
-        # x4,y4  x3,y3
-        x1 = x4 = x * cell_size
-        x2 = x3 = x * cell_size + cell_size
-        y1 = y2 = y * cell_size
-        y3 = y4 = y * cell_size + cell_size
-        all_points.extend((x1, y1, x2, y2, x3, y3, x4, y4))
-        all_colors.extend(color * 4)
+    def __init__(self, width, height, t_offset=0, b_offset=0, l_offset=0, r_offset=0):
+        self.width = width
+        self.height = height
+        self.t_offset = t_offset
+        self.b_offset = b_offset
+        self.l_offset = l_offset
+        self.r_offset = r_offset
 
-    vertex_list = pyglet.graphics.vertex_list(4 * len(coords),
-                                              ('v2i', all_points),
-                                              ('c3B', all_colors))
-    vertex_list.draw(pyglet.gl.GL_QUADS)
+    def clear(self):
+        x1 = x4 = self.l_offset
+        x2 = x3 = self.width - self.r_offset
+        y1 = y2 = self.height - self.t_offset
+        y3 = y4 = self.b_offset
+        vertex_list = pyglet.graphics.vertex_list(4,
+                                                  ('v2i', (x1, y1, x2, y2, x3, y3, x4, y4)),
+                                                  ('c3B', Canvas.bg_color * 4))
+        vertex_list.draw(pyglet.gl.GL_QUADS)
+
+    def draw(self, coords, color, cell_size):
+        all_points = []
+        all_colors = []
+
+        for x, y in coords:
+            # Coords of corners positions:
+            # x1,y1  x2,y2
+            # x4,y4  x3,y3
+            x1 = x4 = x * cell_size + self.l_offset
+            x2 = x3 = x * cell_size + cell_size + self.l_offset
+            y1 = y2 = y * cell_size + self.b_offset
+            y3 = y4 = y * cell_size + cell_size + self.b_offset
+
+            all_points.extend((x1, y1, x2, y2, x3, y3, x4, y4))
+            all_colors.extend(color * 4)
+
+        vertex_list = pyglet.graphics.vertex_list(4 * len(coords),
+                                                  ('v2i', all_points),
+                                                  ('c3B', all_colors))
+        vertex_list.draw(pyglet.gl.GL_QUADS)
 
 
 class GameObject():
@@ -121,8 +144,8 @@ class Snake(GameObject):
         else:
             self.timestamp += dt
 
-    def draw(self):
-        render(self.position, Color.RED.value, self.world_map.cell_size)
+    def draw(self, canvas):
+        canvas.draw(self.position, Color.RED.value, self.world_map.cell_size)
 
     def on_key_press(self, symbol, mods):
         if symbol == key.SPACE:
@@ -182,8 +205,6 @@ class Fruit(GameObject):
     def __init__(self, world_map):
         super().__init__(world_map)
 
-        self.color = Color.GREEN
-
         start_x = self.world_map.width // 2
         start_y = self.world_map.height // 2 + self.world_map.height // 5
         self.grow_at(start_x, start_y)
@@ -204,12 +225,17 @@ class Fruit(GameObject):
         self.world_map.set_cell(x, y, self)
         self.color = random.choice([Color.GREEN, Color.YELLOW, Color.BLUE, Color.PURPLE])
 
-    def draw(self):
-        render(self.position, self.color.value, self.world_map.cell_size)
+    def draw(self, canvas):
+        canvas.draw(self.position, self.color.value, self.world_map.cell_size)
 
-window = pyglet.window.Window(400, 600, caption="Nibble Game")
+WINDOW_WIDTH = 440
+WINDOW_HEIGHT = 670
+HUD_HEIGHT = 50
 
+window = pyglet.window.Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption="Nibble Game")
 world_map = WorldMap(20, 30, 20)
+canvas = Canvas(WINDOW_WIDTH, WINDOW_HEIGHT,
+                t_offset=20, b_offset=HUD_HEIGHT)
 
 snake = Snake(world_map)
 fruit = Fruit(world_map)
@@ -222,8 +248,9 @@ def update(dt):
 
 def draw():
     window.clear()
+    canvas.clear()
     for x in game_objects:
-        x.draw()
+        x.draw(canvas)
 
 def on_key_press(symbol, mods):
     for x in game_objects:
