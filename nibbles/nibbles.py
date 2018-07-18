@@ -189,6 +189,9 @@ class Fruit(GameObject):
         self.grow_at(start_x, start_y)
 
     def eat_me(self):
+        x, y = self.position[0]
+        self.world_map.clean_cell(x, y)
+
         while True:
             rand_x = random.randint(0, self.world_map.width - 1)
             rand_y = random.randint(0, self.world_map.height - 1)
