@@ -202,6 +202,7 @@ class Fruit(GameObject):
     def grow_at(self, x, y):
         self.position = [(x, y)]
         self.world_map.set_cell(x, y, self)
+        self.color = random.choice([Color.GREEN, Color.YELLOW, Color.BLUE, Color.PURPLE])
 
     def draw(self):
         render(self.position, self.color.value, self.world_map.cell_size)
