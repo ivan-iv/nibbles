@@ -26,10 +26,9 @@ class Color(Enum):
 
 
 class WorldMap():
-    def __init__(self, width, height, cell_size):
+    def __init__(self, width, height):
         self.width = width
         self.height = height
-        self.cell_size = cell_size
         self.cells = [[None for i in range(height)] for i in range(width)]
 
     def set_cell(self, x, y, unit):
@@ -60,38 +59,36 @@ class WorldMap():
 class Canvas():
     bg_color = 255, 155, 35
 
-    def __init__(self, width, height, t_offset=0, b_offset=0, l_offset=0, r_offset=0):
+    def __init__(self, width, height, cell_size, padding=0):
         self.width = width
         self.height = height
-        self.t_offset = t_offset
-        self.b_offset = b_offset
-        self.l_offset = l_offset
-        self.r_offset = r_offset
+        self.padding = padding
+        self.cell_size = cell_size
 
     def clear(self):
         # x1,y1  x2,y2
         # x4,y4  x3,y3
-        x1 = x4 = self.l_offset
-        x2 = x3 = self.width - self.r_offset
-        y1 = y2 = self.height - self.t_offset
-        y3 = y4 = self.b_offset
+        x1 = x4 = 0
+        x2 = x3 = self.width
+        y1 = y2 = self.height
+        y3 = y4 = self.padding
 
         vertices = vertex_list(4,
                                ('v2i', (x1, y1, x2, y2, x3, y3, x4, y4)),
                                ('c3B', Canvas.bg_color * 4))
         vertices.draw(gl.GL_QUADS)
 
-    def draw(self, coords, color, cell_size):
+    def draw(self, coords, color):
         all_points = []
         all_colors = []
 
         for x, y in coords:
             # x1,y1  x2,y2
             # x4,y4  x3,y3
-            x1 = x4 = x * cell_size + self.l_offset
-            x2 = x3 = x * cell_size + cell_size + self.l_offset
-            y1 = y2 = y * cell_size + self.b_offset
-            y3 = y4 = y * cell_size + cell_size + self.b_offset
+            x1 = x4 = x * self.cell_size
+            x2 = x3 = x * self.cell_size + self.cell_size
+            y1 = y2 = y * self.cell_size + self.padding
+            y3 = y4 = y * self.cell_size + self.cell_size + self.padding
 
             all_points.extend((x1, y1, x2, y2, x3, y3, x4, y4))
             all_colors.extend(color * 4)
@@ -147,7 +144,7 @@ class Snake(GameObject):
             self.timestamp += dt
 
     def draw(self, canvas):
-        canvas.draw(self.position, Color.RED.value, self.world_map.cell_size)
+        canvas.draw(self.position, Color.RED.value)
 
     def on_key_press(self, symbol, mods):
         if symbol == key.SPACE:
@@ -226,41 +223,45 @@ class Fruit(GameObject):
         self.position = [(x, y)]
         self.world_map.set_cell(x, y, self)
         self.color = random.choice([Color.GREEN, Color.YELLOW, Color.BLUE, Color.PURPLE])
-        print(self.world_map)
 
     def draw(self, canvas):
-        canvas.draw(self.position, self.color.value, self.world_map.cell_size)
+        canvas.draw(self.position, self.color.value)
 
 
 WINDOW_WIDTH = 400
 WINDOW_HEIGHT = 670
 HUD_HEIGHT = 50
+WORLD_MAP_WIDTH = 20
+WORLD_MAP_HEIGHT = 30
+CELL_SIZE = 20
+FRAME_RATE = 120
 
-window = Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption="Nibble Game")
-world_map = WorldMap(20, 30, 20)
-canvas = Canvas(WINDOW_WIDTH, WINDOW_HEIGHT,
-                t_offset=20, b_offset=HUD_HEIGHT)
+def game():
+    window = Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption="Nibble Game")
+    world_map = WorldMap(WORLD_MAP_WIDTH, WORLD_MAP_HEIGHT)
+    canvas = Canvas(WINDOW_WIDTH, WINDOW_HEIGHT, CELL_SIZE, padding=HUD_HEIGHT)
 
-game_objects = [Snake(world_map), Fruit(world_map)]
+    game_objects = [Snake(world_map), Fruit(world_map)]
 
-def update(dt):
-    for x in game_objects:
-        x.update(dt)
+    def update(dt):
+        for x in game_objects:
+            x.update(dt)
 
-def draw():
-    window.clear()
-    canvas.clear()
-    for x in game_objects:
-        x.draw(canvas)
+    def draw():
+        window.clear()
+        canvas.clear()
+        for x in game_objects:
+            x.draw(canvas)
 
-def on_key_press(symbol, mods):
-    for x in game_objects:
-        x.on_key_press(symbol, mods)
+    def on_key_press(symbol, mods):
+        for x in game_objects:
+            x.on_key_press(symbol, mods)
 
-window.set_handler('on_key_press', on_key_press)
-window.set_handler('on_draw', draw)
-clock.schedule_interval(update, 1/120)
+    window.set_handler('on_key_press', on_key_press)
+    window.set_handler('on_draw', draw)
+    clock.schedule_interval(update, 1 / FRAME_RATE)
 
 if __name__ == '__main__':
+    game()
     app.run()
 
