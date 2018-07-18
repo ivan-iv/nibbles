@@ -1,8 +1,8 @@
-from enum import Enum
 import random
-import pyglet
-from pyglet.graphics import Batch
-from pyglet.window import key
+from enum import Enum
+from pyglet import gl, clock, app
+from pyglet.graphics import vertex_list
+from pyglet.window import key, Window
 
 
 class UnitType(Enum):
@@ -30,7 +30,7 @@ class WorldMap():
         self.width = width
         self.height = height
         self.cell_size = cell_size
-        self.cells = [[None for i in range(self.height)] for i in range(self.width)]
+        self.cells = [[None for i in range(height)] for i in range(width)]
 
     def set_cell(self, x, y, unit):
         self.cells[x][y] = unit
@@ -69,21 +69,23 @@ class Canvas():
         self.r_offset = r_offset
 
     def clear(self):
+        # x1,y1  x2,y2
+        # x4,y4  x3,y3
         x1 = x4 = self.l_offset
         x2 = x3 = self.width - self.r_offset
         y1 = y2 = self.height - self.t_offset
         y3 = y4 = self.b_offset
-        vertex_list = pyglet.graphics.vertex_list(4,
-                                                  ('v2i', (x1, y1, x2, y2, x3, y3, x4, y4)),
-                                                  ('c3B', Canvas.bg_color * 4))
-        vertex_list.draw(pyglet.gl.GL_QUADS)
+
+        vertices = vertex_list(4,
+                               ('v2i', (x1, y1, x2, y2, x3, y3, x4, y4)),
+                               ('c3B', Canvas.bg_color * 4))
+        vertices.draw(gl.GL_QUADS)
 
     def draw(self, coords, color, cell_size):
         all_points = []
         all_colors = []
 
         for x, y in coords:
-            # Coords of corners positions:
             # x1,y1  x2,y2
             # x4,y4  x3,y3
             x1 = x4 = x * cell_size + self.l_offset
@@ -94,10 +96,10 @@ class Canvas():
             all_points.extend((x1, y1, x2, y2, x3, y3, x4, y4))
             all_colors.extend(color * 4)
 
-        vertex_list = pyglet.graphics.vertex_list(4 * len(coords),
-                                                  ('v2i', all_points),
-                                                  ('c3B', all_colors))
-        vertex_list.draw(pyglet.gl.GL_QUADS)
+        vertices = vertex_list(4 * len(coords),
+                               ('v2i', all_points),
+                               ('c3B', all_colors))
+        vertices.draw(gl.GL_QUADS)
 
 
 class GameObject():
@@ -198,7 +200,6 @@ class Snake(GameObject):
             return x + 1, y
 
 
-
 class Fruit(GameObject):
     unit_type = UnitType.FRUIT
 
@@ -216,6 +217,7 @@ class Fruit(GameObject):
         while True:
             rand_x = random.randint(0, self.world_map.width - 1)
             rand_y = random.randint(0, self.world_map.height - 1)
+
             if not self.world_map.get_cell(rand_x, rand_y):
                 self.grow_at(rand_x, rand_y)
                 break
@@ -224,23 +226,22 @@ class Fruit(GameObject):
         self.position = [(x, y)]
         self.world_map.set_cell(x, y, self)
         self.color = random.choice([Color.GREEN, Color.YELLOW, Color.BLUE, Color.PURPLE])
+        print(self.world_map)
 
     def draw(self, canvas):
         canvas.draw(self.position, self.color.value, self.world_map.cell_size)
 
-WINDOW_WIDTH = 440
+
+WINDOW_WIDTH = 400
 WINDOW_HEIGHT = 670
 HUD_HEIGHT = 50
 
-window = pyglet.window.Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption="Nibble Game")
+window = Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption="Nibble Game")
 world_map = WorldMap(20, 30, 20)
 canvas = Canvas(WINDOW_WIDTH, WINDOW_HEIGHT,
                 t_offset=20, b_offset=HUD_HEIGHT)
 
-snake = Snake(world_map)
-fruit = Fruit(world_map)
-
-game_objects = [snake, fruit]
+game_objects = [Snake(world_map), Fruit(world_map)]
 
 def update(dt):
     for x in game_objects:
@@ -256,10 +257,10 @@ def on_key_press(symbol, mods):
     for x in game_objects:
         x.on_key_press(symbol, mods)
 
-window.set_handler('on_key_press', snake.on_key_press)
+window.set_handler('on_key_press', on_key_press)
 window.set_handler('on_draw', draw)
-pyglet.clock.schedule_interval(update, 1/120)
+clock.schedule_interval(update, 1/120)
 
 if __name__ == '__main__':
-    pyglet.app.run()
+    app.run()
 
