@@ -10,9 +10,8 @@ class Fruit(GameObject):
     def __init__(self, world_map):
         super().__init__(world_map)
 
-        start_x = self.world_map.width // 2
-        start_y = self.world_map.height // 2 + self.world_map.height // 5
-        self.grow_at(start_x, start_y)
+        x, y = self.get_default_position()
+        self.grow_at(x, y)
 
         self.register_event('eat')
 
@@ -34,6 +33,14 @@ class Fruit(GameObject):
         self.position = [(x, y)]
         self.world_map.set_cell(x, y, self)
         self.color = random.choice([Color.GREEN, Color.YELLOW, Color.BLUE, Color.PURPLE])
+
+    def get_default_position(self):
+        return self.world_map.width // 2, self.world_map.height // 2 + self.world_map.height // 5
+
+    def regrow(self):
+        self.world_map.clean_cell(self.position[0][0], self.position[0][1])
+        x, y = self.get_default_position()
+        self.grow_at(x, y)
 
     def draw(self, canvas):
         canvas.draw(self.position, self.color.value)

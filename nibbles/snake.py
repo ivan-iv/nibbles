@@ -11,18 +11,17 @@ class Dir(Enum):
     LEFT = 2
     RIGHT = 3
 
-DEFAULT_SPEED = 5
-
 class Snake(GameObject):
     unit_type = UnitType.SNAKE
 
-    def __init__(self, world_map):
+    def __init__(self, speed, world_map):
         super().__init__(world_map)
 
         self.dir = Dir.UP
-        self.speed = DEFAULT_SPEED
+        self.speed = speed
         self.is_running = False
         self.is_dying = False
+        self.is_input_block = False
 
         self.position = self.get_default_position()
         self.resync_with_world_map(self.position)
@@ -37,6 +36,7 @@ class Snake(GameObject):
         if self.timestamp >= 1 / self.speed:
             self.timestamp = 0
             self.crawl()
+            self.is_input_block = False
         else:
             self.timestamp += dt
 
@@ -49,23 +49,32 @@ class Snake(GameObject):
 
         if symbol == key.SPACE:
             self.is_running = True
+            return
+
+        if self.is_input_block:
+            return
 
         if symbol == key.UP and self.dir != Dir.DOWN:
             self.dir = Dir.UP
+            self.is_input_block = True
         elif symbol == key.DOWN and self.dir != Dir.UP:
             self.dir = Dir.DOWN
+            self.is_input_block = True
         elif symbol == key.LEFT and self.dir != Dir.RIGHT:
             self.dir = Dir.LEFT
+            self.is_input_block = True
         elif symbol == key.RIGHT and self.dir != Dir.LEFT:
             self.dir = Dir.RIGHT
+            self.is_input_block = True
 
-    def reborn(self, speed=DEFAULT_SPEED):
+    def reborn(self, speed):
         self.speed = speed
         self.dir = Dir.UP
 
         old_position = self.position
         self.position = self.get_default_position()
         self.resync_with_world_map(self.position, old_position)
+        self.timestamp = 0
 
     def get_default_position(self):
         x = self.world_map.width // 2
@@ -97,14 +106,14 @@ class Snake(GameObject):
             self.die()
             return
 
+        self.position.insert(0, (x, y))
+        self.world_map.set_cell(x, y, self)
+
         if unit_at and unit_at.unit_type == UnitType.FRUIT:
             unit_at.eat_me()
         else:
             tail = self.position.pop()
             self.world_map.clean_cell(tail[0], tail[1])
-
-        self.position.insert(0, (x, y))
-        self.world_map.set_cell(x, y, self)
 
     def calc_new_head_position(self):
         x, y = self.position[0]
