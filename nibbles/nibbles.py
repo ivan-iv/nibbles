@@ -1,5 +1,6 @@
 from pyglet import clock, app, window
 from pyglet.window import Window
+import pyglet
 
 from snake import Snake
 from fruit import Fruit
@@ -19,7 +20,19 @@ def game():
     world_map = WorldMap(WORLD_MAP_WIDTH, WORLD_MAP_HEIGHT)
     canvas = Canvas(WINDOW_WIDTH, WINDOW_HEIGHT, CELL_SIZE, padding=HUD_HEIGHT)
 
-    game_objects = [Snake(world_map), Fruit(world_map)]
+    snake = Snake(world_map)
+    fruit = Fruit(world_map)
+
+    def on_die():
+        print('DIE')
+
+    def on_eat():
+        print('EAT')
+
+    snake.subscribe('die', on_die)
+    fruit.subscribe('eat', on_eat)
+
+    game_objects = [snake, fruit]
 
     def update(dt):
         for x in game_objects:

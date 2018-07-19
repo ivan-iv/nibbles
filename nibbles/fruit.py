@@ -14,6 +14,8 @@ class Fruit(GameObject):
         start_y = self.world_map.height // 2 + self.world_map.height // 5
         self.grow_at(start_x, start_y)
 
+        self.register_event('eat')
+
     def eat_me(self):
         x, y = self.position[0]
         self.world_map.clean_cell(x, y)
@@ -25,6 +27,8 @@ class Fruit(GameObject):
             if not self.world_map.get_cell(rand_x, rand_y):
                 self.grow_at(rand_x, rand_y)
                 break
+
+        self.dispatch_event('eat')
 
     def grow_at(self, x, y):
         self.position = [(x, y)]
