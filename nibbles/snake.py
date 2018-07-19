@@ -65,17 +65,13 @@ class Snake(GameObject):
 
         old_position = self.position
         self.position = self.get_default_position()
-        self.resync_with_world_map(old_position)
+        self.resync_with_world_map(self.position, old_position)
 
     def get_default_position(self):
-        start_x = self.world_map.width // 2
-        start_y = self.world_map.height // 2
+        x = self.world_map.width // 2
+        y = self.world_map.height // 2
 
-        return [
-            (start_x, start_y),
-            (start_x, start_y - 1),
-            (start_x, start_y - 2)
-        ]
+        return [(x, y), (x, y - 1), (x, y - 2)]
 
     def resync_with_world_map(self, position, old_position=[]):
         if old_position:
