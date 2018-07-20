@@ -15,7 +15,6 @@ class Fruit(GameObject):
         self._register_event('eat')
 
     def eat_me(self):
-        self.world_map.clean(self.position[0])
         while True:
             coord = (random.randint(0, self.world_map.width - 1),
                      random.randint(0, self.world_map.height - 1))
@@ -24,7 +23,7 @@ class Fruit(GameObject):
                 break
         self._dispatch_event('eat')
 
-    def regrow(self):
+    def reset(self):
         self.world_map.clean(self.position[0])
         self._grow_at(self._get_default_position())
 

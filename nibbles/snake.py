@@ -15,10 +15,10 @@ class Dir(Enum):
 class Snake(GameObject):
     unit_type = UnitType.SNAKE
 
-    def __init__(self, speed, world_map):
+    def __init__(self, world_map):
         super().__init__(world_map)
         self.dir = Dir.UP
-        self.speed = speed
+        self.speed = 1
         self.is_running = False
         self.is_dead = False
         self.is_input_block = False
@@ -42,12 +42,7 @@ class Snake(GameObject):
         canvas.draw(self.position, Color.RED.value)
 
     def on_key_press(self, symbol, mods):
-        if self.is_dead:
-            return
-        if symbol == key.SPACE:
-            self.is_running = True
-            return
-        if self.is_input_block:
+        if self.is_dead or self.is_input_block:
             return
 
         if symbol == key.UP and self.dir != Dir.DOWN:
@@ -63,11 +58,15 @@ class Snake(GameObject):
             self.dir = Dir.RIGHT
             self.is_input_block = True
 
-    def reborn(self, speed):
-        self.speed = speed
+    def reset(self):
         self.dir = Dir.UP
         self.timestamp = 0
+        self.is_dead = False
         self._set_default_position()
+
+    def start(self, speed):
+        self.speed = speed
+        self.is_running = True
 
     def _set_default_position(self):
         self.world_map.clean_all(self.position)
@@ -81,18 +80,18 @@ class Snake(GameObject):
             return
 
         head = self._calc_new_head_position()
-
         is_out_width = head[0] < 0 or head[0] >= self.world_map.width
         is_out_height = head[1] < 0 or head[1] >= self.world_map.height
+
         if is_out_width or is_out_height:
             self._die()
             return
 
         unit_at = self.world_map.get(head)
+
         if unit_at and unit_at.unit_type == UnitType.SNAKE:
             self._die()
             return
-
         self.position.insert(0, head)
         self.world_map.set(head, self)
 

@@ -23,7 +23,7 @@ class WorldMap():
 
     def __str__(self):
         result = ''
-        for y in range(self.height - 1, -1):
+        for y in range(self.height - 1, -1, -1):
             for x in range(self.width):
                 unit = self.cells[x][y]
                 if unit:

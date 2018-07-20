@@ -2,7 +2,7 @@ from pyglet import graphics, gl
 
 
 class Canvas():
-    bg_color = 255, 155, 35
+    bg_color = 0, 0, 0
 
     def __init__(self, width, height, cell_size, padding=0):
         self.width = width
