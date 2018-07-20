@@ -3,7 +3,7 @@ from pyglet.event import EventDispatcher
 
 class GameObject():
     def __init__(self, world_map):
-        self._world_map = world_map
+        self.world_map = world_map
         self._event_dispatcher = EventDispatcher()
 
     def draw(self):
