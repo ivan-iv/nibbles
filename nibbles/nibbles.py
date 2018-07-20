@@ -1,6 +1,5 @@
-from pyglet import clock, app, window
+from pyglet import clock, app
 from pyglet.window import Window
-import pyglet
 
 from snake import Snake
 from fruit import Fruit
@@ -28,6 +27,7 @@ levels = [
     {'number': 9, 'speed': 23, 'goal': 28},
     {'number': 10, 'speed': 25, 'goal': 30}
 ]
+
 
 def game():
     window = Window(WINDOW_WIDTH, WINDOW_HEIGHT, caption="Nibble Game")
@@ -86,7 +86,7 @@ def game():
     window.set_handler('on_draw', draw)
     clock.schedule_interval(update, 1 / FRAME_RATE)
 
+
 if __name__ == '__main__':
     game()
     app.run()
-

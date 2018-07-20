@@ -2,23 +2,31 @@ class WorldMap():
     def __init__(self, width, height):
         self.width = width
         self.height = height
-        self.cells = [[None for i in range(height)] for i in range(width)]
+        self._cells = [[None for i in range(height)] for i in range(width)]
 
-    def set_cell(self, x, y, unit):
-        self.cells[x][y] = unit
+    def set(self, coord, unit):
+        self._cells[coord[0]][coord[1]] = unit
 
-    def get_cell(self, x, y):
-        return self.cells[x][y]
+    def set_all(self, coords, unit):
+        for c in coords:
+            self.set(c, unit)
 
-    def clean_cell(self, x, y):
-        self.cells[x][y] = None
+    def get(self, coord):
+        return self._cells[coord[0]][coord[1]]
+
+    def clean(self, coord):
+        self._cells[coord[0]][coord[1]] = None
+
+    def clean_all(self, coords):
+        for c in coords:
+            self.clean(c)
 
     def __str__(self):
         result = ''
 
-        for y in range(self.height):
+        for y in range(self.height - 1, -1):
             for x in range(self.width):
-                unit = self.cells[x][y]
+                unit = self._cells[x][y]
                 if unit:
                     symbol = unit.unit_type.value
                 else:
@@ -27,4 +35,3 @@ class WorldMap():
             result += '\n'
 
         return result
-

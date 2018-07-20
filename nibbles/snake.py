@@ -11,124 +11,115 @@ class Dir(Enum):
     LEFT = 2
     RIGHT = 3
 
+
 class Snake(GameObject):
     unit_type = UnitType.SNAKE
 
     def __init__(self, speed, world_map):
         super().__init__(world_map)
 
-        self.dir = Dir.UP
-        self.speed = speed
-        self.is_running = False
-        self.is_dying = False
-        self.is_input_block = False
-
-        self.position = self.get_default_position()
-        self.resync_with_world_map(self.position)
-
-        self.timestamp = 0
-        self.register_event('die')
+        self._dir = Dir.UP
+        self._speed = speed
+        self._is_running = False
+        self._is_dying = False
+        self._is_input_block = False
+        self._position = []
+        self._set_default_position()
+        self._timestamp = 0
+        self._register_event('die')
 
     def update(self, dt):
-        if self.is_dying:
+        if self._is_dying:
             return
 
-        if self.timestamp >= 1 / self.speed:
-            self.timestamp = 0
-            self.crawl()
-            self.is_input_block = False
+        if self._timestamp >= 1 / self._speed:
+            self._timestamp = 0
+            self._move()
+            self._is_input_block = False
         else:
-            self.timestamp += dt
+            self._timestamp += dt
 
     def draw(self, canvas):
-        canvas.draw(self.position, Color.RED.value)
+        canvas.draw(self._position, Color.RED.value)
 
     def on_key_press(self, symbol, mods):
-        if self.is_dying:
+        if self._is_dying:
             return
 
         if symbol == key.SPACE:
-            self.is_running = True
+            self._is_running = True
             return
 
-        if self.is_input_block:
+        if self._is_input_block:
             return
 
-        if symbol == key.UP and self.dir != Dir.DOWN:
-            self.dir = Dir.UP
-            self.is_input_block = True
-        elif symbol == key.DOWN and self.dir != Dir.UP:
-            self.dir = Dir.DOWN
-            self.is_input_block = True
-        elif symbol == key.LEFT and self.dir != Dir.RIGHT:
-            self.dir = Dir.LEFT
-            self.is_input_block = True
-        elif symbol == key.RIGHT and self.dir != Dir.LEFT:
-            self.dir = Dir.RIGHT
-            self.is_input_block = True
+        if symbol == key.UP and self._dir != Dir.DOWN:
+            self._dir = Dir.UP
+            self._is_input_block = True
+        elif symbol == key.DOWN and self._dir != Dir.UP:
+            self._dir = Dir.DOWN
+            self._is_input_block = True
+        elif symbol == key.LEFT and self._dir != Dir.RIGHT:
+            self._dir = Dir.LEFT
+            self._is_input_block = True
+        elif symbol == key.RIGHT and self._dir != Dir.LEFT:
+            self._dir = Dir.RIGHT
+            self._is_input_block = True
 
     def reborn(self, speed):
-        self.speed = speed
-        self.dir = Dir.UP
+        self._speed = speed
+        self._dir = Dir.UP
+        self._timestamp = 0
+        self._set_default_position()
 
-        old_position = self.position
-        self.position = self.get_default_position()
-        self.resync_with_world_map(self.position, old_position)
-        self.timestamp = 0
+    def _set_default_position(self):
+        self._world_map.clean_all(self._position)
+        x = self._world_map.width // 2
+        y = self._world_map.height // 2
+        self._position = [(x, y), (x, y - 1)]
+        self._world_map.set_all(self._position, self)
 
-    def get_default_position(self):
-        x = self.world_map.width // 2
-        y = self.world_map.height // 2
-
-        return [(x, y), (x, y - 1), (x, y - 2)]
-
-    def resync_with_world_map(self, position, old_position=[]):
-        if old_position:
-            for x, y in old_position:
-                self.world_map.clean_cell(x, y)
-
-        for x, y in position:
-            self.world_map.set_cell(x, y, self)
-
-    def crawl(self):
-        if not self.is_running:
+    def _move(self):
+        if not self._is_running:
             return
 
-        x, y = self.calc_new_head_position()
+        head = self._calc_new_head_position()
 
-        if x < 0 or x >= self.world_map.width or y < 0 or y >= self.world_map.height:
-            self.die()
+        is_out_width = head[0] < 0 or head[0] >= self._world_map.width
+        is_out_height = head[1] < 0 or head[1] >= self._world_map.height
+
+        if is_out_width or is_out_height:
+            self._die()
             return
 
-        unit_at = self.world_map.get_cell(x, y)
+        unit_at = self._world_map.get(head)
 
         if unit_at and unit_at.unit_type == UnitType.SNAKE:
-            self.die()
+            self._die()
             return
 
-        self.position.insert(0, (x, y))
-        self.world_map.set_cell(x, y, self)
+        self._position.insert(0, head)
+        self._world_map.set(head, self)
 
         if unit_at and unit_at.unit_type == UnitType.FRUIT:
             unit_at.eat_me()
         else:
-            tail = self.position.pop()
-            self.world_map.clean_cell(tail[0], tail[1])
+            tail = self._position.pop()
+            self._world_map.clean(tail)
 
-    def calc_new_head_position(self):
-        x, y = self.position[0]
+    def _calc_new_head_position(self):
+        x, y = self._position[0]
 
-        if self.dir == Dir.UP:
+        if self._dir == Dir.UP:
             return x, y + 1
-        elif self.dir == Dir.DOWN:
+        elif self._dir == Dir.DOWN:
             return x, y - 1
-        elif self.dir == Dir.LEFT:
+        elif self._dir == Dir.LEFT:
             return x - 1, y
-        elif self.dir == Dir.RIGHT:
+        elif self._dir == Dir.RIGHT:
             return x + 1, y
 
-    def die(self):
-        self.is_running = False
-        self.is_dying = True
-        self.dispatch_event('die')
-
+    def _die(self):
+        self._is_running = False
+        self._is_dying = True
+        self._dispatch_event('die')

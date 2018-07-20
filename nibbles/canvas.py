@@ -17,9 +17,8 @@ class Canvas():
         x2 = x3 = self.width
         y1 = y2 = self.height
         y3 = y4 = self.padding
-
-        vertices = graphics.vertex_list(4,
-                                        ('v2i', (x1, y1, x2, y2, x3, y3, x4, y4)),
+        coords = (x1, y1, x2, y2, x3, y3, x4, y4)
+        vertices = graphics.vertex_list(4, ('v2i', coords),
                                         ('c3B', Canvas.bg_color * 4))
         vertices.draw(gl.GL_QUADS)
 
@@ -42,4 +41,3 @@ class Canvas():
                                         ('v2i', all_points),
                                         ('c3B', all_colors))
         vertices.draw(gl.GL_QUADS)
-
